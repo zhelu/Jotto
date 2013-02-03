@@ -92,12 +92,14 @@ public class Jotto {
 				buttonYes_.setEnabled(false);
 				buttonNo_.setEnabled(false);
 			} else if (jottoCore_.getAnagrams().size() == 1) {
+				lastGuess_ = jottoCore_.getAnagrams().get(0);
 				labelInfo_.setText("<HTML>I think your word is \""
 						+ lastGuess_ + ".\" It took "
 						+ guesses_ + " guesses.</HTML>");
 				for (int i = 0; i < 6; i++) {
 					buttonMatches_[i].setEnabled(false);
 				}
+				buttonYes_.setEnabled(false);
 				buttonNo_.setEnabled(false);
 			} else {
 				if (it_ == null) {
