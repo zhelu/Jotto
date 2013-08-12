@@ -1,1 +1,0 @@
-java jotto.gui.Jotto
