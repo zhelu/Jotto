@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.zip.DataFormatException;
 
 /**
- * This class implements the core logic of the jotto game. See html.html in
+ * This class implements the core logic of the jotto game. See help.html in
  * resources.
  * 
  * @author Zhe Lu
