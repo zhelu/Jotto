@@ -7,8 +7,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.DataFormatException;
 
 /**
@@ -112,6 +117,33 @@ public class QueryTree implements Serializable {
     oos.close();
   }
 
+  
+  /*
+   * Create a subtree for each link using the current set of possibilities.
+   */
+  static Node recursivelyBuildTree(Set<String> possibilities, Map<String, List<String>> allWords) {
+    if (possibilities == null) {
+      return null;
+    } else if (possibilities.size() == 1) {
+      // get the single element
+      Iterator<String> it = possibilities.iterator();
+      return Node.nodeFromAnagrams(allWords.get(it.next()));
+    }
+    String guess = JottoCore.findBestWord(possibilities, allWords);
+    Node n = Node.nodeFromGuesses(allWords.get(guess));
+    HashMap<Integer, Set<String>> bins = new HashMap<Integer, Set<String>>();
+    for (String w : possibilities) {
+      int match = JottoCore.numMatchingLetters(guess, w);
+      if (!bins.containsKey(match)) {
+        bins.put(match, new HashSet<String>());
+      }
+      bins.get(match).add(w);
+    }
+    for (int i = 0; i < 6; i++) {
+      n.setLink(i, recursivelyBuildTree(bins.get(i), allWords));
+    }
+    return n;
+  }
 
   /**
    * Query the system for possible words.

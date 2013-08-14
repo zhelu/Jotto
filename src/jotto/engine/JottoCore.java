@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.List;
@@ -22,15 +23,15 @@ import java.util.zip.DataFormatException;
  */
 public class JottoCore {
 
-  private HashMap<String, List<String>> allWords_ = new HashMap<String, List<String>>();
+  private Map<String, List<String>> allWords_ = new HashMap<String, List<String>>();
   private QueryTree qt_;
 
 
   /*
    * Only used internally.
    */
-  private JottoCore() {
-
+  private JottoCore(QueryTree qt) {
+    qt_ = qt;
   }
 
 
@@ -69,14 +70,23 @@ public class JottoCore {
    * Determine word that gives highest information gain
    */
   private String findBestWord(Set<String> orderedLetters) {
+    return findBestWord(orderedLetters, allWords_);
+  }
+
+
+  /*
+   * Determine word that gives highest information gain
+   */
+  static String findBestWord(Set<String> orderedLetters,
+      Map<String, List<String>> allWords) {
     String bestWord = "";
     double bestEntropy = 0;
-    for (String w : allWords_.keySet()) {
+    for (String w : allWords.keySet()) {
       int[] count = new int[6];
       int N = 0;
       for (String word : orderedLetters) {
         int match = numMatchingLetters(w, word);
-        int numWords = allWords_.get(word).size();
+        int numWords = allWords.get(word).size();
         count[match] += numWords;
         N += numWords;
       }
@@ -256,9 +266,8 @@ public class JottoCore {
    */
   public static JottoCore useQueryTreeFromFile(File file) throws IOException,
       DataFormatException {
-    JottoCore retValue = new JottoCore();
-    retValue.qt_ = QueryTree.readFromFile(file);
-    return retValue;
+    QueryTree qt = QueryTree.readFromFile(file);
+    return new JottoCore(qt);
   }
 
 
@@ -270,38 +279,10 @@ public class JottoCore {
   private void buildQueryTree() {
     long startTime = System.currentTimeMillis();
     Set<String> possibilities = allWords_.keySet();
-    qt_ = new QueryTree(recursivelyBuildTree(possibilities));
+    qt_ = new QueryTree(QueryTree.recursivelyBuildTree(possibilities, allWords_));
     qt_.start();
     System.out.println("Building tree took "
         + (System.currentTimeMillis() - startTime) + " ms");
-  }
-
-
-  /*
-   * Create a subtree for each link using the current set of possibilities.
-   */
-  private Node recursivelyBuildTree(Set<String> possibilities) {
-    if (possibilities == null) {
-      return null;
-    } else if (possibilities.size() == 1) {
-      // get the single element
-      Iterator<String> it = possibilities.iterator();
-      return Node.nodeFromAnagrams(allWords_.get(it.next()));
-    }
-    String guess = findBestWord(possibilities);
-    Node n = Node.nodeFromGuesses(allWords_.get(guess));
-    HashMap<Integer, Set<String>> bins = new HashMap<Integer, Set<String>>();
-    for (String w : possibilities) {
-      int match = numMatchingLetters(guess, w);
-      if (!bins.containsKey(match)) {
-        bins.put(match, new HashSet<String>());
-      }
-      bins.get(match).add(w);
-    }
-    for (int i = 0; i < 6; i++) {
-      n.setLink(i, recursivelyBuildTree(bins.get(i)));
-    }
-    return n;
   }
 
 
@@ -325,7 +306,7 @@ public class JottoCore {
    * Matching letters in both strings. a and b must have letters sorted in
    * ascending alphabetical order. See sortLetters() method.
    */
-  private static int numMatchingLetters(String a, String b) {
+  static int numMatchingLetters(String a, String b) {
     int i = 0;
     int j = 0;
     int match = 0;
@@ -348,7 +329,7 @@ public class JottoCore {
    * Given a string, return the string with the letters sorted in ascending
    * alphabetical order.
    */
-  private String sortLetters(String s) {
+  private static String sortLetters(String s) {
     char[] chars = s.toCharArray();
     Arrays.sort(chars);
     return new String(chars);
